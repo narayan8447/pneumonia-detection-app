@@ -25,7 +25,7 @@
 
 ## 🖥️ Demo
 
-> **Live Demo:** *Coming soon — deploy on [Streamlit Cloud](https://streamlit.io/cloud)*
+> **Live Demo:** *(https://pneumoscann.streamlit.app/)*
 
 <!-- Add a screenshot here -->
 <!-- ![PneumoScan AI Screenshot](docs/screenshot.png) -->
