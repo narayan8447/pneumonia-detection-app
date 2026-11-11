@@ -1,4 +1,4 @@
-"""PneumoScan AI — AI-Powered Chest X-Ray Analysis Dashboard.
+"""Pneumonia X-Ray Screening — AI-Powered Chest X-Ray Analysis Dashboard.
 
 A polished Streamlit application for chest X-ray pneumonia screening
 using a custom CNN with Grad-CAM visualisation, severity estimation,
@@ -8,9 +8,7 @@ DICOM support, input validation, and PDF report generation.
 """
 from __future__ import annotations
 
-import csv
 import io
-import time
 from datetime import datetime
 from pathlib import Path
 
@@ -79,7 +77,7 @@ TO_TENSOR = T.Compose(
 # Page config  (MUST be first Streamlit call)
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="PneumoScan AI",
+    page_title="Pneumonia X-Ray Screening",
     page_icon="🫁",
     layout="wide",
 )
@@ -314,7 +312,12 @@ def load_model():
 # ---------------------------------------------------------------------------
 # Inference + Grad-CAM
 # ---------------------------------------------------------------------------
-def analyze(model, pil_image: Image.Image, use_clahe: bool = False) -> dict:
+def analyze(
+    model,
+    pil_image: Image.Image,
+    use_clahe: bool = False,
+    clahe_clip: float = 2.0,
+) -> dict:
     """Run the classifier and compute Grad-CAM for the predicted class.
 
     Returns dict with keys: crop, enhanced_crop (or None), cam, idx, scores, share.
@@ -325,7 +328,7 @@ def analyze(model, pil_image: Image.Image, use_clahe: bool = False) -> dict:
     enhanced = None
     if use_clahe and _HAS_PREPROCESSING:
         try:
-            img_enhanced = apply_clahe(img)
+            img_enhanced = apply_clahe(img, clip_limit=clahe_clip)
             enhanced = CROP(img_enhanced)
         except Exception:
             enhanced = None
@@ -373,6 +376,7 @@ def analyze(model, pil_image: Image.Image, use_clahe: bool = False) -> dict:
 for _k, _v in [
     ("history", []),
     ("patient_name", ""),
+    ("patient_id", ""),
     ("patient_age", ""),
     ("patient_sex", ""),
     ("referring_physician", ""),
@@ -394,7 +398,7 @@ with st.sidebar:
     st.markdown(
         '<div class="brand-box">'
         '<div class="logo">🫁</div>'
-        '<p class="title">PneumoScan AI</p>'
+        '<p class="title">Pneumonia X-Ray Screening</p>'
         '<p class="sub">AI-Powered Chest X-Ray Analysis</p>'
         '</div>',
         unsafe_allow_html=True,
@@ -428,6 +432,7 @@ with st.sidebar:
     # Patient information
     st.subheader("👤 Patient Information")
     st.session_state.patient_name = st.text_input("Patient Name", value=st.session_state.patient_name)
+    st.session_state.patient_id = st.text_input("Patient ID", value=st.session_state.patient_id)
     st.session_state.patient_age = st.text_input("Patient Age", value=st.session_state.patient_age)
     st.session_state.patient_sex = st.selectbox(
         "Patient Sex",
@@ -456,6 +461,7 @@ with st.sidebar:
 def _patient_info() -> dict | None:
     pi = {
         "patient_name": st.session_state.patient_name,
+        "patient_id": st.session_state.patient_id,
         "patient_age": st.session_state.patient_age,
         "patient_sex": st.session_state.patient_sex,
         "referring_physician": st.session_state.referring_physician,
@@ -597,7 +603,7 @@ with tab_analyze:
 
             # --- Run inference ---
             try:
-                res = analyze(model, pil_image, use_clahe=use_clahe)
+                res = analyze(model, pil_image, use_clahe=use_clahe, clahe_clip=clahe_clip)
             except Exception as exc:
                 st.error(f"Inference failed for **{fname}**: {exc}")
                 continue
@@ -783,7 +789,7 @@ with tab_analyze:
                         st.download_button(
                             "📄 Download PDF Report",
                             data=pdf_bytes,
-                            file_name=f"pneumoscan_report_{chosen.rsplit('.', 1)[0]}.pdf",
+                            file_name=f"xrayscreening_report_{chosen.rsplit('.', 1)[0]}.pdf",
                             mime="application/pdf",
                         )
                     except Exception as exc:
@@ -982,7 +988,7 @@ with tab_history:
         b1.download_button(
             "📥 Download CSV",
             csv_data,
-            "pneumoscan_session.csv",
+            "xrayscreening_session.csv",
             "text/csv",
         )
 
@@ -1016,7 +1022,7 @@ with tab_about:
     )
     st.subheader("🔬 How It Works")
     st.markdown(f"""
-**PneumoScan AI** uses a custom Convolutional Neural Network (CNN) to classify chest
+**Pneumonia X-Ray Screening** uses a custom Convolutional Neural Network (CNN) to classify chest
 X-ray images as either **Normal** or **Pneumonia**. The model analyses the image and
 produces a probability score for each class, along with a **Grad-CAM heatmap** that
 highlights the lung regions that influenced the prediction.

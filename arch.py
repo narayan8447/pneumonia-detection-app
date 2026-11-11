@@ -123,7 +123,7 @@ class Net(nn.Module):
             ),
         )
 
-    def forward(self, x) -> float:
+    def forward(self, x):
         x = self.convolution_block1(x)
 
         x = self.pooling11(x)

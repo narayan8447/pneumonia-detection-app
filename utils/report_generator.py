@@ -196,8 +196,8 @@ def generate_pdf_report(
     pdf.set_font("Helvetica", "I", 8)
     pdf.cell(
         0, 5,
-        f"Report generated on {timestamp_str} by AI-Assisted Chest X-Ray "
-        f"Analysis System.",
+        f"Report generated on {timestamp_str} by the Pneumonia X-Ray "
+        f"Screening System.",
         ln=True,
         align="C",
     )
@@ -268,18 +268,22 @@ def _collect_patient_fields(
     fields: list[tuple[str, str]] = []
 
     # Helper to pull a value from patient_info first, then metadata
-    def _get(pi_key: str, meta_key: str, label: str) -> None:
+    def _get(keys: list[str], meta_key: str, label: str) -> None:
         val = "N/A"
-        if patient_info and patient_info.get(pi_key):
-            val = str(patient_info[pi_key])
-        elif metadata and metadata.get(meta_key) and metadata[meta_key] != "N/A":
-            val = str(metadata[meta_key])
-        fields.append((label, val))
+        if patient_info:
+            for k in keys:
+                if patient_info.get(k):
+                    val = str(patient_info[k]).strip()
+                    break
+        if (not val or val == "N/A") and metadata and metadata.get(meta_key) and metadata[meta_key] != "N/A":
+            val = str(metadata[meta_key]).strip()
+        fields.append((label, val if val else "N/A"))
 
-    _get("name", "patient_name", "Patient Name")
-    _get("id", "patient_id", "Patient ID")
-    _get("age", "patient_age", "Age")
-    _get("sex", "patient_sex", "Sex")
+    _get(["patient_name", "name"], "patient_name", "Patient Name")
+    _get(["patient_id", "id"], "patient_id", "Patient ID")
+    _get(["patient_age", "age"], "patient_age", "Age")
+    _get(["patient_sex", "sex"], "patient_sex", "Sex")
+    _get(["referring_physician", "physician", "doctor"], "referring_physician", "Referring Physician")
 
     # Extra DICOM-only fields
     if metadata:
